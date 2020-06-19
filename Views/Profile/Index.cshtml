@@ -1,0 +1,161 @@
+﻿@{
+    ViewData["Title"] = Model.Name;
+}
+<style>
+    body
+    * {
+        box-sizing: border-box;
+    }
+
+    .open-button {
+        background-color: #0000cd;
+        color: white;
+        padding: 16px 20px;
+        border: none;
+        cursor: pointer;
+        opacity: 0.8;
+        position: fixed;
+        bottom: 23px;
+        right: 28px;
+        width: 280px;
+    }
+
+    .form-popup {
+        display: none;
+        position: fixed;
+        bottom: 0;
+        right: 15px;
+        border: 3px solid #f1f1f1;
+        z-index: 9;
+    }
+
+    .form-container {
+        max-width: 300px;
+        padding: 10px;
+        background-color: white;
+    }
+
+        .form-container input[type=text], .form-container input[type=password] {
+            width: 100%;
+            padding: 15px;
+            margin: 5px 0 22px 0;
+            border: none;
+            background: #f1f1f1;
+        }
+
+            .form-container input[type=text]:focus, .form-container input[type=password]:focus {
+                background-color: #ddd;
+                outline: none;
+            }
+
+        .form-container .btn {
+            background-color: #4CAF50;
+            color: white;
+            padding: 16px 20px;
+            border: none;
+            cursor: pointer;
+            width: 100%;
+            margin-bottom: 10px;
+            opacity: 0.8;
+        }
+
+        .form-container .cancel {
+            background-color: red;
+        }
+
+        .form-container .btn:hover, .open-button:hover {
+            opacity: 1;
+        }
+
+    #please_login {
+        color: red
+    }
+</style>
+<div class="text-center">
+    <h1 class="display-4">@Model.Name</h1>
+</div>
+
+<div class="text-left">
+    <p>Personal Data:</p>
+    <ul>
+        <li>ID: <i>@Model.ID</i></li>
+        <li>Password: <i>@Model.Password</i></li>
+    </ul>
+</div>
+<br />
+<p>@Model.Name's Rehearsal Rooms:</p>
+<div id="showRooms"></div>
+
+<br />
+<p>@Model.Name's Bookings:</p>
+<div id="showBookings"></div>
+
+<button class="open-button" onclick="openForm()">Create a Rehearsal Room</button>
+<div class="form-popup" id="myForm">
+    <form asp-area="" asp-controller="Room" asp-action="CreateRoom" class="form-container">
+
+        <label for="roomName"></label>
+        <input type="text" min="1" max="20" placeholder="Your Rehearsal Room Name" name="rehearsal_room_name" required>
+
+        <button type="submit" class="btn">Create</button>
+        <button type="button" class="btn cancel" onclick="closeForm()">Close</button>
+    </form>
+</div>
+
+
+<script>
+            function showBookingsM() {
+            const bookings = JSON.parse(this.responseText);
+            const ul = document.createElement('ol');
+
+        bookings.forEach(b => {
+            const li = document.createElement('li');
+            li.textContent = `${b.booking_Date}, REHEARSAL ROOM ID: ${b.rehearsal_Room_ID}`;
+            ul.appendChild(li);
+
+        });
+            const showBookings = document.getElementById('showBookings');
+        showBookings.appendChild(ul);
+    }
+
+        function onBookings() {
+        var oReq = new XMLHttpRequest();
+        oReq.addEventListener("load", showBookingsM);
+        var url = `/Booking/UsersBookings/${@Model.ID}`;
+        oReq.open("GET", url);
+        oReq.send();
+    }
+        function reqListener() {
+            const rooms = JSON.parse(this.responseText);
+            const ul = document.createElement('ol');
+
+        rooms.forEach(r => {
+            const li = document.createElement('li');
+            li.textContent = `${r.name}`;
+            ul.appendChild(li);
+
+        });
+            const showRooms = document.getElementById('showRooms');
+        showRooms.appendChild(ul);
+    }
+
+    function onLoad() {
+        var oReq = new XMLHttpRequest();
+        oReq.addEventListener("load", reqListener);
+        var url = `/Room/UsersRooms/${@Model.ID}`;
+        oReq.open("GET", url);
+        oReq.send();
+    }
+    onBookings();
+    onLoad();
+
+    function openForm() {
+        document.getElementById("myForm").style.display = "block";
+        }
+
+    function closeForm() {
+        document.getElementById("myForm").style.display = "none";
+        }
+
+</script>
+

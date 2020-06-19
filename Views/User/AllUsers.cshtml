@@ -1,0 +1,17 @@
+﻿@using MySite_MVC.Domain
+@model List<User>
+
+@{
+    ViewData["Title"] = "Users";
+}
+
+<div class="text-center">
+    <h1 class="display-4">Users</h1>
+</div>
+
+<ul>
+    @foreach (var user in Model)
+    {
+        <li>@user.Name</li>
+    }
+</ul>

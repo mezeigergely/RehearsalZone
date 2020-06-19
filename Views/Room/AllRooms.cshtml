@@ -1,0 +1,217 @@
+﻿@using MySite_MVC.Domain
+@model List<Room>
+
+@{
+    ViewData["Title"] = "Rehearsal Rooms";
+}
+<style>
+    body
+    * {
+        box-sizing: border-box;
+    }
+
+    .open-button {
+        background-color: #0000cd;
+        color: white;
+        padding: 16px 20px;
+        border: none;
+        cursor: pointer;
+        opacity: 0.8;
+        position: fixed;
+        bottom: 23px;
+        right: 28px;
+        width: 280px;
+    }
+
+    .form-popup {
+        display: none;
+        position: fixed;
+        bottom: 0;
+        right: 15px;
+        border: 3px solid #f1f1f1;
+        z-index: 9;
+    }
+
+    .form-container {
+        max-width: 300px;
+        padding: 10px;
+        background-color: white;
+    }
+
+    .form-container input[type=text], .form-container input[type=password] {
+        width: 100%;
+        padding: 15px;
+        margin: 5px 0 22px 0;
+        border: none;
+        background: #f1f1f1;
+    }
+
+    .form-container input[type=text]:focus, .form-container input[type=password]:focus {
+        background-color: #ddd;
+        outline: none;
+    }
+
+    .form-container .btn {
+        background-color: #4CAF50;
+        color: white;
+        padding: 16px 20px;
+        border: none;
+        cursor: pointer;
+        width: 100%;
+        margin-bottom: 10px;
+        opacity: 0.8;
+    }
+
+    .form-container .cancel {
+        background-color: red;
+    }
+
+    .form-container .btn:hover, .open-button:hover {
+        opacity: 1;
+    }
+
+    #please_login {
+        color: red
+    }
+</style>
+
+<div class="text-center">
+    <h1 class="display-4">Rehearsal Rooms</h1>
+</div>
+<div class="text-center" id="opening_hours">
+    <p><b>Book a Rehearsal Room for the day!</b><br />(Monday - Sunday)</p>
+</div>
+@if (!User.Identity.IsAuthenticated)
+{
+    <div class="text-center" id="please_login">
+        <p><a asp-area="" asp-controller="Account" asp-action="Login"><b>PLEASE LOGIN TO BOOKING!</b></a></p>
+    </div>
+}
+
+@if (User.Identity.IsAuthenticated)
+{
+    <button class="open-button" onclick="openForm()">Booking</button>
+    <div class="form-popup" id="myForm">
+        <form asp-area="" asp-controller="Room" asp-action="MakeBooking" class="form-container">
+            <h1>Booking</h1>
+
+            @*<label for="userID"><b>User ID</b></label>
+        <input type="number" placeholder="Rehearsal Room ID" name="user_id" required>*@
+
+            <label for="roomID"><b>Rehearsal Room ID</b></label>
+            <input type="number" min="1" max="50" placeholder="Rehearsal Room ID" name="rehearsal_room_id" required>
+
+            <label for="date"><b></b></label>
+            <input type="date" placeholder="yyyy.mm.dd." name="booking_date" required>
+
+            <button type="submit" class="btn">Booking</button>
+            <button type="button" class="btn cancel" onclick="closeForm()">Close</button>
+        </form>
+    </div>
+    
+}
+
+<div id="showTable"></div>
+
+
+<script>
+    function openForm() {
+        document.getElementById("myForm").style.display = "block";
+    }
+
+    function closeForm() {
+        document.getElementById("myForm").style.display = "none";
+    }
+
+    function bookingMethod() {
+        const bookings = JSON.parse(this.responseText);
+        const ul = document.createElement('ul');
+        bookings.forEach(b => {
+            const li = document.createElement('li');
+            li.textContent = `${b.booking_Date} (USER: ${b.user_ID}), REHEARSAL ROOM ID: ${b.rehearsal_Room_ID}`;
+            ul.appendChild(li);
+        });
+
+        const showDetails = document.getElementById("showDetails");
+        if (showDetails !== null) {
+            showDetails.remove();
+        }
+        const divShowDetails = document.createElement("div");
+        divShowDetails.id = "showDetails";
+
+        const showTable = document.getElementById("showTable");
+        showTable.insertAdjacentElement('afterend', divShowDetails)
+
+        divShowDetails.appendChild(ul);
+    }
+
+    function roomClick() {
+        var xhr = new XMLHttpRequest();
+        xhr.addEventListener("load", bookingMethod);
+        var url = `/Room/GetOneRoomBookings/${this.id}`;
+        xhr.open("GET", url);
+        xhr.send();
+    }
+
+    function reqListener() {
+
+        const rooms = JSON.parse(this.responseText);
+        const ul = document.createElement('ol');
+
+        rooms.forEach(r => {
+            const input = document.createElement('input');
+            const button = document.createElement('button');
+            input.setAttribute('type', 'date');
+            input.setAttribute('id', 'inputID');
+            button.textContent = 'Booking';
+            button.setAttribute ('id', 'buttonID');
+            button.addEventListener("click", function () {
+                var formData = new FormData();
+                formData.append('rehearsal_room_id', r.id)
+                formData.append('booking_date', input.value);
+                var xhr = new XMLHttpRequest();
+                var url = "/Room/MakeBooking";
+                xhr.open("POST", url);
+                xhr.send(formData);
+                if (xhr.status == 200)
+                {
+                    alert('200')
+                }
+                else {
+                    alert("wrong")
+                }
+            });
+
+            const li = document.createElement('li');
+            li.id = `room-${r.id}`;
+
+            const a = document.createElement('a');
+            a.id = `${r.id}`;
+            a.dataset.userID = r.userID;
+            a.href = "#";
+            a.addEventListener("click", roomClick)
+            //a.textContent = `${r.name} \t\t | owner: user ${r.userID} \t\t `;
+            a.textContent = `${r.name} \t\t`;
+
+            li.appendChild(a);
+            li.appendChild(input);
+            li.appendChild(button);
+            ul.appendChild(li);
+
+        });
+
+        const showTable = document.getElementById('showTable');
+        showTable.appendChild(ul);
+    }
+
+    function onLoad() {
+        var oReq = new XMLHttpRequest();
+        oReq.addEventListener("load", reqListener);
+        var url = "/Room/GetAll"
+        oReq.open("GET", url);
+        oReq.send();
+    }
+
+    onLoad();
+
+</script>
